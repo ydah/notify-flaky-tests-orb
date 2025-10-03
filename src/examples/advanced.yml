@@ -1,0 +1,52 @@
+description: >
+  Advanced example demonstrating all available features including filtering,
+  custom notifications, metrics export, and debug mode.
+
+usage:
+  version: 2.1
+
+  orbs:
+    notify-flaky-tests: ydah/notify-flaky-tests@2.0.0
+
+  workflows:
+    nightly_flaky_test_analysis:
+      triggers:
+        - schedule:
+            cron: "0 2 * * *"
+            filters:
+              branches:
+                only:
+                  - main
+                  - develop
+      jobs:
+        - notify-flaky-tests/notify:
+            name: notify-critical-tests
+            project_slug: gh/ydah/backend-api
+            channel: "#backend-team,#qa-alerts"
+            time_range: 30
+            minimum_flake_count: 5
+            test_file_pattern: ".*critical.*\\.spec\\.js$"
+            notification_title: ":rotating_light: Critical Flaky Tests Alert"
+            include_statistics: true
+            include_test_insights_link: true
+            group_by_class: true
+            debug: false
+            output_metrics: true
+            metrics_format: json
+            metrics_file_path: /tmp/critical_flaky_tests
+            max_retries: 5
+            retry_delay: 10
+
+        - notify-flaky-tests/notify:
+            name: notify-all-tests
+            project_slug: gh/ydah/backend-api
+            channel: "#engineering"
+            time_range: 90
+            minimum_flake_count: 1
+            notification_title: ":mag: Quarterly Test Stability Report"
+            include_statistics: true
+            group_by_class: false
+            output_metrics: true
+            metrics_format: prometheus
+            requires:
+              - notify-critical-tests

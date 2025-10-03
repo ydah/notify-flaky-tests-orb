@@ -1,0 +1,138 @@
+description: >
+  Job that collects flaky tests via CircleCI API and sends notifications to Slack.
+  This job combines all the functionality of the notify command with a pre-configured executor.
+  The environment variables CIRCLE_TOKEN, SLACK_ACCESS_TOKEN, and SLACK_DEFAULT_CHANNEL must be set.
+
+executor: default
+
+parameters:
+  project_slug:
+    description: >
+      Example: gh/CircleCI-Public/api-preview-docs.
+      Project slug in the form vcs-slug/org-name/repo-name.
+      If not specified, current project's slug will be used.
+    default: ''
+    type: string
+
+  circle_token:
+    description: >
+      CircleCI token for fetching flaky tests via API.
+      If not specified, CIRCLE_TOKEN environment variable will be used.
+      Please refer to this document for how to generate it:
+      https://circleci.com/docs/managing-api-tokens (requires a v2 token)
+    default: $CIRCLE_TOKEN
+    type: string
+
+  channel:
+    description: >
+      Select which channel in which to post to.
+      Channel name or ID will work.
+      You may include a comma separated list of channels if you wish to post to multiple channels at once.
+      Set the "SLACK_DEFAULT_CHANNEL" environment variable for the default channel.
+    default: $SLACK_DEFAULT_CHANNEL
+    type: string
+
+  time_range:
+    description: >
+      Time range for fetching flaky tests (in days).
+      Default is 90 days.
+    default: 90
+    type: integer
+
+  minimum_flake_count:
+    description: >
+      Minimum number of times a test must have flaked to be included in the notification.
+      Default is 1.
+    default: 1
+    type: integer
+
+  test_file_pattern:
+    description: >
+      Optional regex pattern to filter test files.
+      Example: ".*spec\.js$" to only include JavaScript spec files.
+    default: ""
+    type: string
+
+  include_test_insights_link:
+    description: >
+      Include a link to the test insights dashboard for each flaky test.
+    default: true
+    type: boolean
+
+  notification_title:
+    description: >
+      Custom title for the Slack notification.
+    default: ":warning: Flaky tests detected"
+    type: string
+
+  include_statistics:
+    description: >
+      Include statistical summary in the notification.
+    default: true
+    type: boolean
+
+  group_by_class:
+    description: >
+      Group tests by their class name in the notification.
+    default: false
+    type: boolean
+
+  debug:
+    description: >
+      Enable debug mode for troubleshooting.
+      Will output detailed logs and API responses.
+    default: false
+    type: boolean
+
+  output_metrics:
+    description: >
+      Output flaky test metrics to a file for further processing.
+    default: false
+    type: boolean
+
+  metrics_format:
+    description: >
+      Format for metrics output (json, csv, prometheus).
+      Only used when output_metrics is true.
+    default: "json"
+    type: enum
+    enum: ["json", "csv", "prometheus"]
+
+  metrics_file_path:
+    description: >
+      Path where metrics file will be saved.
+      Only used when output_metrics is true.
+    default: "/tmp/flaky_tests_metrics"
+    type: string
+
+  max_retries:
+    description: >
+      Maximum number of retry attempts for API calls.
+    default: 3
+    type: integer
+
+  retry_delay:
+    description: >
+      Delay in seconds between retry attempts.
+    default: 5
+    type: integer
+
+steps:
+  - checkout
+  - notify:
+      project_slug: <<parameters.project_slug>>
+      circle_token: <<parameters.circle_token>>
+      channel: <<parameters.channel>>
+      time_range: <<parameters.time_range>>
+      minimum_flake_count: <<parameters.minimum_flake_count>>
+      test_file_pattern: <<parameters.test_file_pattern>>
+      include_test_insights_link: <<parameters.include_test_insights_link>>
+      notification_title: <<parameters.notification_title>>
+      include_statistics: <<parameters.include_statistics>>
+      group_by_class: <<parameters.group_by_class>>
+      debug: <<parameters.debug>>
+      output_metrics: <<parameters.output_metrics>>
+      metrics_format: <<parameters.metrics_format>>
+      metrics_file_path: <<parameters.metrics_file_path>>
+      max_retries: <<parameters.max_retries>>
+      retry_delay: <<parameters.retry_delay>>

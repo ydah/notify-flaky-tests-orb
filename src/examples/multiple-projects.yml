@@ -1,0 +1,50 @@
+description: >
+  Example for monitoring flaky tests across multiple projects in your organization.
+  Useful for teams managing multiple repositories.
+
+usage:
+  version: 2.1
+
+  orbs:
+    notify-flaky-tests: ydah/notify-flaky-tests@2.0.0
+
+  parameters:
+    run_weekly_report:
+      type: boolean
+      default: false
+
+  workflows:
+    multi_project_monitoring:
+      when: << pipeline.parameters.run_weekly_report >>
+      jobs:
+        - notify-flaky-tests/notify:
+            name: frontend-tests
+            project_slug: gh/ydah/frontend-app
+            channel: "#frontend-team"
+            notification_title: ":computer: Frontend Flaky Tests"
+            minimum_flake_count: 2
+
+        - notify-flaky-tests/notify:
+            name: backend-tests
+            project_slug: gh/ydah/backend-api
+            channel: "#backend-team"
+            notification_title: ":gear: Backend Flaky Tests"
+            minimum_flake_count: 2
+
+        - notify-flaky-tests/notify:
+            name: mobile-tests
+            project_slug: gh/ydah/mobile-app
+            channel: "#mobile-team"
+            notification_title: ":iphone: Mobile Flaky Tests"
+            minimum_flake_count: 2
+            test_file_pattern: ".*\\.test\\.(js|ts)$"
+
+        - notify-flaky-tests/notify:
+            name: integration-tests
+            project_slug: gh/ydah/integration-tests
+            channel: "#qa-team"
+            notification_title: ":link: Integration Tests Report"
+            include_statistics: true
+            group_by_class: true
+            output_metrics: true
+            metrics_format: csv

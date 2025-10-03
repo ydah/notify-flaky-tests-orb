@@ -1,0 +1,26 @@
+description: >
+  This example uses Scheduled Pipelines to run periodic checks for flaky tests.
+  Perfect for daily or weekly reports to keep your team informed about test stability.
+
+  About Scheduled Pipelines: https://circleci.com/docs/scheduled-pipelines
+
+usage:
+  version: 2.1
+
+  orbs:
+    notify-flaky-tests: ydah/notify-flaky-tests@2.0.0
+
+  parameters:
+    notify_flaky_tests:
+      type: boolean
+      default: false
+
+  workflows:
+    notify_flaky_tests:
+      when: << pipeline.parameters.notify_flaky_tests >>
+      jobs:
+        - notify-flaky-tests/notify:
+            channel: "#qa-team"
+            notification_title: ":chart_with_upwards_trend: Daily Flaky Tests Report"
+            time_range: 7
+            minimum_flake_count: 2

@@ -1,0 +1,14 @@
+description: >
+  Basic example of using the notify-flaky-tests orb.
+  This will run the notification job with default settings.
+
+usage:
+  version: 2.1
+
+  orbs:
+    notify-flaky-tests: ydah/notify-flaky-tests@2.0.0
+
+  workflows:
+    notify_flaky_tests:
+      jobs:
+        - notify-flaky-tests/notify

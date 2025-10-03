@@ -1,0 +1,57 @@
+description: >
+  Example showing how to use the notify command within a custom job,
+  allowing for additional processing of the metrics data.
+
+usage:
+  version: 2.1
+
+  orbs:
+    notify-flaky-tests: ydah/notify-flaky-tests@2.0.0
+
+  jobs:
+    analyze_and_report:
+      executor: notify-flaky-tests/default
+      parameters:
+        project_slug:
+          type: string
+        threshold:
+          type: integer
+          default: 10
+      steps:
+        - checkout
+
+        - notify-flaky-tests/notify:
+            project_slug: << parameters.project_slug >>
+            channel: "#engineering"
+            minimum_flake_count: 1
+            output_metrics: true
+            metrics_format: json
+            metrics_file_path: /tmp/flaky_tests
+
+        - run:
+            name: Analyze metrics
+            command: |
+              if [ -f /tmp/flaky_tests.json ]; then
+                total_tests=$(jq '.total_flaky_tests' /tmp/flaky_tests.json)
+                echo "Total flaky tests: $total_tests"
+
+                if [ "$total_tests" -gt << parameters.threshold >> ]; then
+                  echo "ERROR: Flaky tests count ($total_tests) exceeds threshold (<< parameters.threshold >>)"
+                  echo "Top 5 most flaky tests:"
+                  jq -r '.tests | sort_by(.times_flaked) | reverse | .[0:5] | .[] | "\(.times_flaked) flakes: \(.name)"' /tmp/flaky_tests.json
+                  exit 1
+                else
+                  echo "Flaky tests count is within acceptable threshold"
+                fi
+              fi
+
+        - store_artifacts:
+            path: /tmp/flaky_tests.json
+            destination: flaky-tests-metrics
+
+  workflows:
+    quality_gate:
+      jobs:
+        - analyze_and_report:
+            project_slug: gh/ydah/main-app
+            threshold: 10

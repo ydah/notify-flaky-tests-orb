@@ -1,0 +1,53 @@
+# Docker Compose configuration for local testing
+# This allows you to test the orb scripts locally without CircleCI
+
+version: '3.8'
+
+services:
+  test-environment:
+    image: cimg/base:stable
+    volumes:
+      - ./src/scripts:/scripts:ro
+      - ./test-data:/test-data
+    environment:
+      - DEBUG=true
+      - PROJECT_SLUG=gh/ydah/test-project
+      - CIRCLE_BUILD_URL=https://circleci.com/gh/ydah/test-project/123
+      - CIRCLE_TOKEN=${CIRCLE_TOKEN}
+      - SLACK_ACCESS_TOKEN=${SLACK_ACCESS_TOKEN}
+      - SLACK_DEFAULT_CHANNEL=${SLACK_DEFAULT_CHANNEL:-#test}
+      - TIME_RANGE=90
+      - MINIMUM_FLAKE_COUNT=1
+      - TEST_FILE_PATTERN=
+      - INCLUDE_TEST_INSIGHTS_LINK=true
+      - NOTIFICATION_TITLE="⚠️ Flaky tests detected"
+      - INCLUDE_STATISTICS=true
+      - GROUP_BY_CLASS=false
+      - OUTPUT_METRICS=true
+      - METRICS_FORMAT=json
+      - METRICS_FILE_PATH=/tmp/flaky_tests_metrics
+      - MAX_RETRIES=3
+      - RETRY_DELAY=5
+    working_dir: /workspace
+    command: |
+      bash -c "
+        echo 'Starting test environment...'
+        bash /scripts/install_dependencies.sh
+        bash /scripts/collect_flaky_tests.sh
+        echo 'Test completed.'
+        tail -f /dev/null
+      "
+
+  shellcheck:
+    image: koalaman/shellcheck:stable
+    volumes:
+      - ./src/scripts:/scripts:ro
+    working_dir: /scripts
+    command: ["*.sh"]
+
+  yamllint:
+    image: cytopia/yamllint:latest
+    volumes:
+      - ./:/workspace:ro
+    working_dir: /workspace
+    command: ["-c", ".yamllint", "src/"]

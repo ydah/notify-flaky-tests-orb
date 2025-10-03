@@ -1,0 +1,14 @@
+version: 2.1
+
+description: >
+  Detect and notify flaky tests in your CircleCI project. This orb fetches flaky test data
+  from CircleCI's Test Insights API and sends detailed notifications to Slack, helping teams
+  identify and fix unstable tests quickly. Features include smart filtering, statistics,
+  and customizable notifications.
+
+display:
+  home_url: "https://github.com/ydah/notify-flaky-tests-orb"
+  source_url: "https://github.com/ydah/notify-flaky-tests-orb"
+
+orbs:
+  slack: circleci/slack@6.0.0

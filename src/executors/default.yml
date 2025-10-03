@@ -1,0 +1,22 @@
+description: >
+  cimg/base docker executor for running flaky tests notifications
+
+docker:
+  - image: 'cimg/base:<<parameters.tag>>'
+
+resource_class: <<parameters.resource_class>>
+
+parameters:
+  tag:
+    default: stable
+    description: >
+      Pick a specific cimg/base image variant:
+      https://hub.docker.com/r/cimg/base/tags
+    type: string
+
+  resource_class:
+    default: small
+    description: >
+      Resource class for the executor.
+      Options: small, medium, medium+, large, xlarge, 2xlarge
+    type: string

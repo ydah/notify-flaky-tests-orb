@@ -1,0 +1,65 @@
+version: 2.1
+orbs:
+  notify-flaky-tests: ydah/notify-flaky-tests@dev:<<pipeline.git.revision>>
+  orb-tools: circleci/orb-tools@11.1
+
+filters: &filters
+  tags:
+    only: /.*/
+
+jobs:
+  notify-flaky-tests:
+    executor: notify-flaky-tests/default
+    steps:
+      - checkout
+      - notify-flaky-tests/notify:
+          project_slug: gh/ydah/circleci-demo-test-insights
+          channel: engineering
+          minimum_flake_count: 1
+          debug: false
+
+  notify-with-filters:
+    executor: notify-flaky-tests/default
+    steps:
+      - checkout
+      - notify-flaky-tests/notify:
+          project_slug: gh/ydah/circleci-demo-test-insights
+          channel: qa-team
+          minimum_flake_count: 3
+          time_range: 30
+          test_file_pattern: ".*spec\\.js$"
+          debug: true
+
+  not-notify-flaky-tests:
+    executor: notify-flaky-tests/default
+    steps:
+      - checkout
+      - notify-flaky-tests/notify
+
+workflows:
+  test-deploy:
+    jobs:
+      # Make sure to include "filters: *filters" in every test job you want to run as part of your deployment.
+      - notify-flaky-tests:
+          filters: *filters
+      - notify-with-filters:
+          filters: *filters
+      - not-notify-flaky-tests:
+          filters: *filters
+      - orb-tools/pack:
+          filters: *filters
+      - orb-tools/publish:
+          orb-name: ydah/notify-flaky-tests
+          vcs-type: << pipeline.project.type >>
+          pub-type: production
+          requires:
+            - orb-tools/pack
+            - notify-flaky-tests
+            - notify-with-filters
+            - not-notify-flaky-tests
+          context: orb-publishing
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+\.[0-9]+\.[0-9]+$/
